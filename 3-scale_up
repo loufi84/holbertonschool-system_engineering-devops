@@ -1,0 +1,56 @@
+## Infrastructure Components
+
+Two HAProxy Load Balancers (Configured as a Cluster)
+
+Purpose: The load balancers distribute incoming traffic across backend servers (web servers in this case) to ensure high availability and efficient load distribution.
+Why Added: A single load balancer is a SPOF, meaning if it fails, the entire system becomes inaccessible. By deploying two HAProxy instances in a cluster (using a mechanism like Keepalived for failover), if one load balancer fails, the other takes over seamlessly, ensuring continuous availability. The cluster configuration uses a virtual IP (VIP) to manage failover, maintaining service uptime.
+Details: HAProxy is chosen for its performance, reliability, and ability to handle advanced load-balancing algorithms (e.g., round-robin or least connections). The cluster ensures high availability, addressing the SPOF concern.
+
+
+One Web Server (Nginx)
+
+Purpose: The web server handles static content (e.g., HTML, CSS, JavaScript, images) and acts as a reverse proxy to forward dynamic requests to the application server.
+Why Added: Separating the web server from other components allows it to specialize in serving static content efficiently and handling tasks like SSL termination (for HTTPS traffic). Nginx is chosen for its lightweight architecture, high performance, and ability to handle thousands of concurrent connections.
+Details: By offloading static content delivery from the application server, the web server reduces the load on the application server, improving scalability and response times for users.
+
+
+One Application Server
+
+Purpose: The application server executes business logic and generates dynamic content (e.g., processing user inputs, running application code).
+Why Added: Separating the application server from the web server and database allows for modular design, enabling independent scaling and maintenance. This isolation improves performance by dedicating resources to processing application logic, which can be resource-intensive for dynamic content generation.
+Details: The application server could run frameworks like Node.js, Django, or Spring, depending on the application’s requirements. This separation also enhances security by limiting the scope of each server’s responsibilities.
+
+
+One Database Server (MySQL)
+
+Purpose: The database server manages persistent data storage, handling queries and ensuring data consistency.
+Why Added: A dedicated database server ensures that data operations are isolated from the web and application layers, improving reliability and performance. MySQL is chosen for its robustness, widespread use, and support for relational data management.
+Details: Separating the database allows for optimized configurations (e.g., tuning MySQL for read-heavy or write-heavy workloads) and easier backups or replication setups, enhancing data consistency and reliability.
+
+
+
+
+# Why Components Are Separated
+Splitting the infrastructure into distinct servers for the web server, application server, and database server provides several benefits:
+
+Scalability: Each component can be scaled independently. For example, additional web servers can be added to handle increased traffic without affecting the application or database layers.
+Flexibility: Different components can use specialized hardware or software configurations tailored to their roles (e.g., SSDs for the database, more CPU for the application server).
+Security: Isolating components reduces the attack surface. A compromise in the web server does not directly affect the application or database servers.
+Maintainability: Updates, patches, or scaling can be performed on one component without downtime for others, improving system reliability.
+
+
+# Web Server vs. Application Server
+
+Web Server: A web server (e.g., Nginx) is responsible for serving static content, such as HTML pages, CSS files, JavaScript, and images, directly to clients. It also acts as a reverse proxy, forwarding requests for dynamic content to the application server. Additionally, it handles tasks like SSL termination, caching, and load balancing for static resources.
+Application Server: An application server executes the business logic of the application, generating dynamic content based on user inputs or application requirements. It runs the application code (e.g., in Python, Java, or Node.js) and communicates with the database to fetch or store data.
+How They Work Together: The web server receives client requests, serves static content directly, and forwards dynamic requests to the application server. The application server processes these requests, interacts with the database if needed, and returns the dynamic content to the web server, which then delivers it to the client.
+
+
+# Summary of Infrastructure
+
+2 HAProxy Load Balancers (Clustered): Eliminates SPOF, ensures high availability, and distributes traffic.
+1 Nginx Web Server: Serves static content and proxies dynamic requests, improving performance.
+1 Application Server: Handles business logic and dynamic content generation, enhancing modularity.
+1 MySQL Database Server: Manages data storage, ensuring consistency and reliability.
+
+This setup meets all requirements: it adds a server, includes a clustered HAProxy load balancer to eliminate SPOF, splits components into dedicated servers, and provides clear reasoning for each element’s inclusion. The modular design ensures scalability, flexibility, security, and reliability for the infrastructure.
