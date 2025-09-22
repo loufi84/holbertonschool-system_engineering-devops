@@ -1,0 +1,70 @@
+## How it works
+1. The user types www.foobar.com into their browser.
+2. The browser asks the DNS system: “What is the IP address of www.foobar.com?”
+- The www record resolves to the public IP address of the load-balancer (HAProxy).
+3. The browser establishes a TCP connection to the load balancer on port 80 (HTTP) or 443 (HTTPS).
+- If HTTPS is enabled, SSL/TLS negotiation happens here.
+4. The HAProxy load-balancer receives the request.
+- It checks its pool of backend servers (Server A and Server B).
+- It selects one based on the configured distribution algorithm.
+- Health checks ensure traffic only goes to healthy servers.
+5. The chosen application server (Server A or Server B) receives the request.
+- The request first hits Nginx.
+- Nginx serves static files (CSS, images) and forwards dynamic requests to the application server.
+6. The application server executes the codebase (application files).
+7. If needed, the application communicates with the MySQL database to read or write data.
+8. The application generates a response (HTML/JSON/etc.), sends it back to Nginx, then to HAProxy, and finally back to the user’s browser.
+9. The user sees the website.
+
+# Components
+Domain: foobar.com with www record pointing to the load-balancer IP.
+Load balancer (HAProxy): distributes traffic across servers and performs health checks.
+2 Application servers (Server A, Server B): each runs Nginx, an application server, and the application code.
+Database: MySQL cluster with a Primary (on Server A) and a Replica (on Server B).
+Redundancy server (Server C): an extra node with Nginx, application server, codebase, and MySQL, ensuring roles exist on at least two machines.
+HAProxy: distributes traffic and ensures backend health.
+2 App servers: provide redundancy and horizontal scaling.
+Primary/Replica DB: ensures data redundancy, allows read scaling, and provides a failover option.
+Redundancy server: ensures that every component (web, app, DB) has a backup.
+
+# Load-balancer algorithm
+Round-robin (with health checks): HAProxy forwards requests in turn to available, healthy backend servers.
+First request → Server A.
+Second request → Server B.
+Third request → back to Server A, and so on.
+If a server fails health checks, it is skipped.
+
+# Active-Active vs Active-Passive
+This design uses Active-Active for the application tier.
+Both servers (A and B) actively handle requests at the same time.
+Active-Passive alternative: one server handles traffic, the other is idle until failover.
+Simpler, but wastes capacity.
+Load balancer itself: currently only one HAProxy → this is a SPOF. In a real HA design, you’d deploy two HAProxies in Active-Active or Active-Passive with 
+VRRP.
+
+# Primary-Replica DB behavior
+Primary DB (Server A): handles all writes (INSERT/UPDATE/DELETE) and can also handle reads.
+Replica DB (Server B): receives data via asynchronous replication and handles read-only queries.
+Replication: Primary writes changes to binlog; Replica replays them. There may be replication lag.
+Server C: can also act as a replica, and be promoted if Primary fails.
+
+# Differences between Primary and Replica for the application
+Primary:
+Accepts reads and writes.
+Source of truth for data.
+Replica(s):
+Accept read-only queries.
+Reduce load on Primary by serving SELECT queries.
+Can lag slightly behind Primary, so reads may be stale.
+
+# Issues with this infrastructure
+SPOFs (Single Points of Failure):
+Single HAProxy: if it fails, the site is unreachable.
+Primary DB: if it fails, writes stop until failover.
+Security problems:
+No firewall: all ports exposed.
+No HTTPS/TLS: traffic is unencrypted, vulnerable to interception.
+DB might be exposed if misconfigured.
+No monitoring:
+No visibility on server health, replication lag, or load.
+No alerts for failures.
