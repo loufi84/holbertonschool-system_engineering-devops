@@ -1,0 +1,59 @@
+# How It Works
+
+The user enters www.foobar.com in their browser.
+Since the browser only works with IP addresses, not domain names, it queries the DNS system to find the IP for www.foobar.com.
+
+"www" acts as an A record that maps the domain (www.foobar.com) to the load balancer's (HAProxy) IP address.
+This IP serves as the public gateway to the entire setup.
+
+
+The browser initiates a TCP connection (using port 80 for HTTP or 443 for HTTPS) with the load balancer.
+
+Packets are exchanged between the user's device and HAProxy via TCP/IP over the internet.
+For HTTPS setups, an SSL/TLS handshake occurs here to secure the connection with encryption and verify authenticity.
+
+
+HAProxy, the load balancer, processes the incoming request.
+
+It evaluates its backend server group (App Server 1 and App Server 2).
+Selection happens based on a predefined load-balancing algorithm.
+Health checks confirm the target server's availability and responsiveness.
+Prior to routing, HAProxy enforces security measures like firewall rules and rate limiting to defend against DDoS attacks or excessive requests.
+
+
+The selected App Server receives the request, which is handled by the web server (Nginx). Nginx manages HTTP requests, delivers static assets such as images or stylesheets, and passes dynamic requests to the application server.
+
+Nginx also applies HTTPS/SSL policies and filters out potentially malicious traffic.
+
+
+The application server executes the website's codebase (application logic and files).
+
+Monitoring agents at this stage track metrics like queries per second (QPS), response times, and error rates to identify performance bottlenecks or security threats.
+
+
+When data storage or retrieval is needed, the application interacts with the MySQL database (which holds the site's persistent data).
+
+Database operations are monitored, with safeguards like rate limiting to block abuse or SQL injection risks.
+
+
+The application server constructs a response (e.g., HTML, JSON), relays it back to Nginx, which then forwards it to HAProxy.
+HAProxy sends the response to the user's browser.
+The website content is now visible to the user.
+
+# Components
+Firewalls: Control and restrict network traffic to minimize vulnerabilities and prevent unauthorized access.
+HTTPS: Encrypts communication between the client and server to protect sensitive information.
+Monitoring: Offers insights into system health, including detection of errors, slowdowns, and potential breaches.
+Monitoring Collection: Agents gather data such as logs and metrics (e.g., CPU usage, memory, QPS, HTTP status codes) and transmit them to a centralized platform.
+To Monitor QPS: Set up the monitoring system to capture and analyze the rate of requests handled by the web server, with alerts for abnormal spikes or drops.
+
+# More Elements
+Firewalls (x3): Placed on the load balancer, application servers, and database to safeguard each by regulating inbound and outbound traffic, blocking threats, and enhancing overall security.
+SSL Certificate: Enables HTTPS for www.foobar.com, ensuring all traffic is encrypted to maintain data privacy, prevent tampering, and build user trust.
+Monitoring Clients (x3): Deployed on each server to actively collect performance data, logs, and metrics, then forward them to a service like Sumologic for analysis and alerting.
+
+# Issues with This Infrastructure
+
+SSL Termination at Load Balancer: This leaves internal traffic between the load balancer and application servers unencrypted, exposing it to potential interception or attacks within the network.
+Single MySQL Primary: Represents a single point of failure for write operations; if it fails, the system loses the ability to update the database, halting critical functions.
+Servers with Uniform Components: Combining database, web server, and application server on the same machines can lead to inefficient scaling (e.g., database needs may outpace others), resource conflicts, and broader disruptions during maintenance on one component affecting the rest.
