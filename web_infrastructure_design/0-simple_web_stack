@@ -1,0 +1,59 @@
+## One-Server Web Infrastructure – Explanation
+
+# Starting point: a user accessing the website
+A user types www.foobar.com into their browser.
+The DNS system translates www.foobar.com into the IP address of the server (8.8.8.8).
+The browser connects to the server at 8.8.8.8 using HTTP/HTTPS over TCP/IP.
+On that server:
+The web server (Nginx) receives the request.
+- If it is for static content (HTML, CSS, JavaScript, images), Nginx serves the files directly.
+- If it is for dynamic content, Nginx forwards the request to the application server.
+The application server executes the code from the application files (code base), possibly querying or updating the MySQL database.
+The response is returned to the web server, which sends it back to the user’s browser.
+
+## Key Explanations
+
+# About the Server
+A server is a computer system that provides services to clients over a network.
+A server is generally located in a data center for reliability, connectivity, and security.
+A server can be physical (bare-metal) or virtual (running on a hypervisor or cloud provider).
+Every server runs an Operating System (OS), which allows it to run software like Nginx, the application code, and MySQL.
+
+# About the Domain Name
+The role of the domain name (foobar.com) is to provide a human-readable address instead of using the server’s IP.
+The DNS system translates the domain name into an IP address.
+In this case, www.foobar.com is an A record, because it resolves directly to the server’s IP 8.8.8.8.
+
+# About the Web Server
+The web server (Nginx) is represented on the diagram.
+Its role is to serve static content like HTML, CSS, images, and JavaScript files.
+It also forwards dynamic requests to the application server.
+
+# About the Application Server
+The application server is also drawn on the diagram.
+Its role is to compute dynamic content: it runs the application code, applies business logic, and interacts with the database.
+
+# About the Application Files
+The application files (code base) are shown in the diagram.
+They contain the logic of the website, templates, and assets needed for the application server to generate responses.
+
+# About the Database
+Its role is to store application data (for example, users, products, or posts).
+
+# About the Communication
+The server communicates with the user’s computer over the network using TCP/IP.
+The application uses HTTP/HTTPS as the protocol for web traffic.
+
+## Issues with This Infrastructure
+
+# 1.SPOF (Single Point of Failure)
+Since everything runs on one server, if that machine fails, the whole website goes down.
+Nothing is redundant.
+
+# 2.Downtime during maintenance
+When deploying new code or restarting Nginx, the web server stops temporarily.
+This means the website will be unavailable for users during updates.
+
+# 3.Scalability limitations
+One server has limited CPU, RAM, and bandwidth.
+The infrastructure cannot scale to handle traffic spikes that exceed the server’s capacity.
